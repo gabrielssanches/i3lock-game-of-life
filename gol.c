@@ -161,7 +161,7 @@ bool gol_cell_is_alive(const int col, const int line) {
 void gol_init(unsigned int width, unsigned int height, unsigned int *cols, unsigned int *rows, unsigned int *grid) {
     _g.display.width = width;
     _g.display.height = height;
-    _g.grid.size = 5;
+    _g.grid.size = 10;
     _g.grid.nh = _g.display.width / _g.grid.size;
     _g.grid.nv = _g.display.height / _g.grid.size;
     gol_create(&_g.gol, _g.grid.nh, _g.grid.nv);

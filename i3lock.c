@@ -1003,7 +1003,7 @@ static void raise_loop(xcb_window_t window) {
 }
 
 static void timeout_cb (EV_P_ ev_timer *w, int revents) {
-    draw_image(bg_pixmap, last_resolution);
+    draw_image(bg_pixmap, last_resolution, true);
     redraw_screen();
 }
 
@@ -1249,7 +1249,7 @@ int main(int argc, char *argv[]) {
 
     /* Pixmap on which the image is rendered to (if any) */
     bg_pixmap = create_bg_pixmap(conn, screen, last_resolution, color);
-    draw_image(bg_pixmap, last_resolution);
+    draw_image(bg_pixmap, last_resolution, false);
 
     xcb_window_t stolen_focus = find_focused_window(conn, screen->root);
 
@@ -1323,7 +1323,7 @@ int main(int argc, char *argv[]) {
     ev_timer timer_watcher;
 
     // Initialize the timer watcher with a callback function, an initial delay of 1 second, and a repeat interval of 1 second.
-    ev_timer_init(&timer_watcher, timeout_cb, 1.0f/10.0f, 1.0f/10.0f);
+    ev_timer_init(&timer_watcher, timeout_cb, 1.0f/5.0f, 1.0f/5.0f);
 
     // Start the timer
     ev_timer_start(main_loop, &timer_watcher);

@@ -174,7 +174,7 @@ static void check_modifier_keys(void) {
  * resolution and returns it.
  *
  */
-void draw_image(xcb_pixmap_t bg_pixmap, uint32_t *resolution) {
+void draw_image(xcb_pixmap_t bg_pixmap, uint32_t *resolution, bool tick) {
     const double scaling_factor = get_dpi_value() / 96.0;
     int button_diameter_physical = ceil(scaling_factor * BUTTON_DIAMETER);
     DEBUG("scaling_factor is %.f, physical diameter is %d px\n",
@@ -218,12 +218,14 @@ void draw_image(xcb_pixmap_t bg_pixmap, uint32_t *resolution) {
         gol_init(resolution[0], resolution[1], &gol_cols, &gol_rows, &gol_grid);
     }
 
-    gol_update();
+    if (tick) {
+        gol_update();
+    }
     // draw life
     for (unsigned int row = 0; row < gol_rows; row++) {
         for (unsigned int col = 0; col < gol_cols; col++) {
             if (gol_cell_is_alive(col, row)) {
-                cairo_set_source_rgb(gol_ctx, 125.0 / 255, 51.0 / 255, 0);
+                cairo_set_source_rgb(gol_ctx, 0.0 / 255, 0.0 / 255, 0);
                 cairo_rectangle(gol_ctx, gol_grid * col, gol_grid * row, gol_grid, gol_grid);
                 cairo_fill(gol_ctx);
             }
@@ -468,7 +470,7 @@ void redraw_screen(void) {
         bg_pixmap = create_bg_pixmap(conn, screen, last_resolution, color);
     }
 
-    draw_image(bg_pixmap, last_resolution);
+    draw_image(bg_pixmap, last_resolution, false);
     xcb_change_window_attributes(conn, win, XCB_CW_BACK_PIXMAP, (uint32_t[1]){bg_pixmap});
     /* XXX: Possible optimization: Only update the area in the middle of the
      * screen instead of the whole screen. */
