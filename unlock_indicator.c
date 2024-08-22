@@ -19,6 +19,7 @@
 
 #include "i3lock.h"
 #include "xcb.h"
+#include "gol.h"
 #include "unlock_indicator.h"
 #include "randr.h"
 #include "dpi.h"
@@ -189,6 +190,9 @@ void draw_image(xcb_pixmap_t bg_pixmap, uint32_t *resolution) {
     cairo_surface_t *output = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, button_diameter_physical, button_diameter_physical);
     cairo_t *ctx = cairo_create(output);
 
+    cairo_surface_t *gol_output = cairo_xcb_surface_create(conn, bg_pixmap, vistype, resolution[0], resolution[1]);
+    cairo_t *gol_ctx = cairo_create(gol_output);
+
     cairo_surface_t *xcb_output = cairo_xcb_surface_create(conn, bg_pixmap, vistype, resolution[0], resolution[1]);
     cairo_t *xcb_ctx = cairo_create(xcb_output);
 
@@ -204,6 +208,28 @@ void draw_image(xcb_pixmap_t bg_pixmap, uint32_t *resolution) {
     cairo_set_source_rgb(xcb_ctx, rgb16[0] / 255.0, rgb16[1] / 255.0, rgb16[2] / 255.0);
     cairo_rectangle(xcb_ctx, 0, 0, resolution[0], resolution[1]);
     cairo_fill(xcb_ctx);
+
+    static int gol_ready = 0;
+    static unsigned int gol_cols = 1;
+    static unsigned int gol_rows = 1;
+    static unsigned int gol_grid = 1;
+    if (gol_ready == 0) {
+        gol_ready = 1;
+        gol_init(resolution[0], resolution[1], &gol_cols, &gol_rows, &gol_grid);
+    }
+
+    gol_update();
+    // draw life
+    for (unsigned int row = 0; row < gol_rows; row++) {
+        for (unsigned int col = 0; col < gol_cols; col++) {
+            if (gol_cell_is_alive(col, row)) {
+                cairo_set_source_rgb(gol_ctx, 125.0 / 255, 51.0 / 255, 0);
+                cairo_rectangle(gol_ctx, gol_grid * col, gol_grid * row, gol_grid, gol_grid);
+                cairo_fill(gol_ctx);
+            }
+        }
+    }
+    cairo_set_source_surface(gol_ctx, output, 0, 0);
 
     if (img) {
         if (!tile) {
@@ -404,8 +430,10 @@ void draw_image(xcb_pixmap_t bg_pixmap, uint32_t *resolution) {
     }
 
     cairo_surface_destroy(xcb_output);
+    cairo_surface_destroy(gol_output);
     cairo_surface_destroy(output);
     cairo_destroy(ctx);
+    cairo_destroy(gol_ctx);
     cairo_destroy(xcb_ctx);
 }
 

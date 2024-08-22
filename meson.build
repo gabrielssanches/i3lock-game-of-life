@@ -90,6 +90,7 @@ i3lock_srcs = [
   'randr.c',
   'unlock_indicator.c',
   'xcb.c',
+  'gol.c',
 ]
 
 ev_dep = cc.find_library('ev')

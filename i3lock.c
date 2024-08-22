@@ -97,6 +97,7 @@ cairo_surface_t *img = NULL;
 bool tile = false;
 bool ignore_empty_password = false;
 bool skip_repeated_empty_password = false;
+xcb_pixmap_t bg_pixmap;
 
 /* isutf, u8_dec © 2005 Jeff Bezanson, public domain */
 #define isutf(c) (((c)&0xC0) != 0x80)
@@ -1001,6 +1002,11 @@ static void raise_loop(xcb_window_t window) {
     }
 }
 
+static void timeout_cb (EV_P_ ev_timer *w, int revents) {
+    draw_image(bg_pixmap, last_resolution);
+    redraw_screen();
+}
+
 int main(int argc, char *argv[]) {
     struct passwd *pw;
     char *username;
@@ -1242,7 +1248,7 @@ int main(int argc, char *argv[]) {
     free(image_raw_format);
 
     /* Pixmap on which the image is rendered to (if any) */
-    xcb_pixmap_t bg_pixmap = create_bg_pixmap(conn, screen, last_resolution, color);
+    bg_pixmap = create_bg_pixmap(conn, screen, last_resolution, color);
     draw_image(bg_pixmap, last_resolution);
 
     xcb_window_t stolen_focus = find_focused_window(conn, screen->root);
@@ -1313,6 +1319,14 @@ int main(int argc, char *argv[]) {
 
     ev_prepare_init(xcb_prepare, xcb_prepare_cb);
     ev_prepare_start(main_loop, xcb_prepare);
+
+    ev_timer timer_watcher;
+
+    // Initialize the timer watcher with a callback function, an initial delay of 1 second, and a repeat interval of 1 second.
+    ev_timer_init(&timer_watcher, timeout_cb, 1.0f/10.0f, 1.0f/10.0f);
+
+    // Start the timer
+    ev_timer_start(main_loop, &timer_watcher);
 
     /* Invoke the event callback once to catch all the events which were
      * received up until now. ev will only pick up new events (when the X11
