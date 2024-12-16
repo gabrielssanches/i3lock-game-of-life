@@ -199,9 +199,29 @@ void draw_image(xcb_pixmap_t bg_pixmap, uint32_t *resolution, bool tick) {
     /* After the first iteration, the pixmap will still contain the previous
      * contents. Explicitly clear the entire pixmap with the background color
      * first to get back into a defined state: */
-    char strgroups[3][3] = {{color[0], color[1], '\0'},
-                            {color[2], color[3], '\0'},
-                            {color[4], color[5], '\0'}};
+    static int gol_ready = 0;
+    static unsigned int gol_cols = 1;
+    static unsigned int gol_rows = 1;
+    static unsigned int gol_grid = 1;
+    static char gol_color[7];
+    static char gol_color_neg[7];
+    if (gol_ready == 0) {
+        gol_ready = 1;
+        gol_init(resolution[0], resolution[1], &gol_cols, &gol_rows, &gol_grid);
+
+        // get a random color
+        srand((unsigned int)time(NULL));
+        int randomColor = rand() % 0x1000000;
+        sprintf(gol_color, "%06x", randomColor);
+        gol_color[6] = '\0';
+        int oppositeColor = 0xFFFFFF ^ randomColor;
+        sprintf(gol_color_neg, "%06x", oppositeColor);
+        gol_color_neg[6] = '\0';
+    }
+
+    char strgroups[3][3] = {{gol_color[0], gol_color[1], '\0'},
+                            {gol_color[2], gol_color[3], '\0'},
+                            {gol_color[4], gol_color[5], '\0'}};
     uint32_t rgb16[3] = {(strtol(strgroups[0], NULL, 16)),
                          (strtol(strgroups[1], NULL, 16)),
                          (strtol(strgroups[2], NULL, 16))};
@@ -209,23 +229,21 @@ void draw_image(xcb_pixmap_t bg_pixmap, uint32_t *resolution, bool tick) {
     cairo_rectangle(xcb_ctx, 0, 0, resolution[0], resolution[1]);
     cairo_fill(xcb_ctx);
 
-    static int gol_ready = 0;
-    static unsigned int gol_cols = 1;
-    static unsigned int gol_rows = 1;
-    static unsigned int gol_grid = 1;
-    if (gol_ready == 0) {
-        gol_ready = 1;
-        gol_init(resolution[0], resolution[1], &gol_cols, &gol_rows, &gol_grid);
-    }
-
     if (tick) {
         gol_update();
     }
+
+    char strgroups_cel[3][3] = {{gol_color_neg[0], gol_color_neg[1], '\0'},
+                            {gol_color_neg[2], gol_color_neg[3], '\0'},
+                            {gol_color_neg[4], gol_color_neg[5], '\0'}};
+    uint32_t rgb16_cel[3] = {(strtol(strgroups_cel[0], NULL, 16)),
+                         (strtol(strgroups_cel[1], NULL, 16)),
+                         (strtol(strgroups_cel[2], NULL, 16))};
     // draw life
     for (unsigned int row = 0; row < gol_rows; row++) {
         for (unsigned int col = 0; col < gol_cols; col++) {
             if (gol_cell_is_alive(col, row)) {
-                cairo_set_source_rgb(gol_ctx, 0.0 / 255, 0.0 / 255, 0);
+                cairo_set_source_rgb(gol_ctx, rgb16_cel[0] / 255.0, rgb16_cel[1] / 255.0, rgb16_cel[2] / 255.0);
                 cairo_rectangle(gol_ctx, gol_grid * col, gol_grid * row, gol_grid, gol_grid);
                 cairo_fill(gol_ctx);
             }
